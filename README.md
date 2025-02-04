@@ -20,7 +20,7 @@ Este es un script de [Tampermonkey](https://www.tampermonkey.net/) que permite r
 
 1. Instala la extensión [Tampermonkey](https://www.tampermonkey.net/) en tu navegador.
 2. Abre el [panel de Tampermonkey](chrome-extension://dhdgffkkebhmkfjojejmpbldmpobfkfo/options.html).
-3. Crea un nuevo script y copia el código del archivo [`script.js`](script.js).
+3. Crea un nuevo script y copia el código del archivo [`script.js`](https://github.com/wernser412/Reemplazar-texto-coincidente/raw/refs/heads/main/Reemplazar%20texto%20coincidente.user.js).
 4. Guarda el script y asegúrate de que está habilitado.
 5. Visita [es.onlinemschool.com](https://es.onlinemschool.com/) y usa el menú de Tampermonkey para abrir la configuración.
 
