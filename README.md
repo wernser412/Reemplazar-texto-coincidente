@@ -1,5 +1,9 @@
 # Reemplazar texto en es.onlinemschool.com
 
+**Última Actualización:** 06 de Febrero de 2024
+
+![Interfaz Gráfica del Script](GUI.png)
+
 Este es un script de [Tampermonkey](https://www.tampermonkey.net/) que permite reemplazar texto en la página [es.onlinemschool.com](https://es.onlinemschool.com/) con una interfaz de usuario para gestionar las palabras a reemplazar.
 
 ## Características
