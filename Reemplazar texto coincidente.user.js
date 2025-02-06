@@ -4,6 +4,7 @@
 // @version      2.4
 // @description  Reemplaza palabras en es.onlinemschool.com con menú en Tampermonkey. Optimizado con mejor rendimiento.
 // @author       wernser412
+// @downloadURL  https://github.com/wernser412/Reemplazar-texto-coincidente/raw/refs/heads/main/Reemplazar%20texto%20coincidente.user.js
 // @match        *://es.onlinemschool.com/*
 // @grant        GM_registerMenuCommand
 // ==/UserScript==
