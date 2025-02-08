@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Reemplazar texto coincidente
 // @namespace    http://tampermonkey.net/
-// @version      2.4
+// @version      2.5
 // @description  Reemplaza palabras en es.onlinemschool.com con menú en Tampermonkey. Optimizado con mejor rendimiento.
 // @author       wernser412
 // @icon         https://raw.githubusercontent.com/wernser412/Reemplazar-texto-coincidente/refs/heads/main/icono.png
 // @downloadURL  https://github.com/wernser412/Reemplazar-texto-coincidente/raw/refs/heads/main/Reemplazar%20texto%20coincidente.user.js
 // @match        *://es.onlinemschool.com/*
+// @match        *://calculatorsoup.com/*
 // @grant        GM_registerMenuCommand
 // ==/UserScript==
 
