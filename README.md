@@ -1,6 +1,6 @@
 # 🔁 Reemplazar texto en es.onlinemschool.com
 
-**Última Actualización:** 06 de Febrero de 2024
+**Última Actualización:** 25 de mayo de 2025
 
 ![Interfaz Gráfica del Script](GUI.png)
 
