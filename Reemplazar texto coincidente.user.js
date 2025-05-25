@@ -1,62 +1,47 @@
 // ==UserScript==
-// @name         Resaltar texto coincidente mejorado
+// @name         Reemplazar texto coincidente
 // @namespace    http://tampermonkey.net/
-// @version      3.1
-// @description  Resalta palabras específicas en hentaitk.net con opciones configurables, color y funciones de importación/exportación JSON integradas en el menú de Tampermonkey.
+// @version      3.0
+// @description  Reemplaza palabras por sitio con menú en Tampermonkey, exporta/importa desde archivo. Optimizado y modular.
 // @author       wernser412
-// @icon         https://raw.githubusercontent.com/wernser412/Resaltar-texto-coincidente/refs/heads/main/icono.png
-// @downloadURL  https://github.com/wernser412/Resaltar-texto-coincidente/raw/refs/heads/main/Resaltar%20texto%20coincidente.user.js
-// @match        *://hentaitk.net/*
+// @icon         https://raw.githubusercontent.com/wernser412/Reemplazar-texto-coincidente/refs/heads/main/icono.png
+// @match        *://es.onlinemschool.com/*
+// @match        *://*.calculatorsoup.com/*
 // @grant        GM_registerMenuCommand
+// @grant        GM_download
 // ==/UserScript==
 
 (function () {
     'use strict';
 
-    let config = JSON.parse(localStorage.getItem('resaltarConfig')) || {
-        palabras: [],
-        color: '#FF0000'
-    };
+    const dominio = location.hostname;
+    let base = JSON.parse(localStorage.getItem('reemplazosPorSitio') || '{}');
+    base[dominio] = base[dominio] || [];
+    let reemplazos = base[dominio];
 
-    function escapeRegExp(text) {
-        return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    function aplicarReemplazos(nodo) {
+        if (nodo.nodeType !== 3 || !reemplazos.length) return;
+        let texto = nodo.nodeValue;
+        reemplazos.forEach(([original, nuevo]) => {
+            if (original && nuevo) {
+                const regex = new RegExp(`\\b${original}\\b`, 'gi');
+                texto = texto.replace(regex, nuevo);
+            }
+        });
+        nodo.nodeValue = texto;
     }
 
-    function resaltarTexto(node) {
-        if (node.nodeType !== 3 || !config.palabras.length) return;
-        if (node.parentNode.closest('span[data-resaltado]')) return;
-
-        const texto = node.nodeValue;
-        const regex = new RegExp(`\\b(${config.palabras.map(escapeRegExp).join('|')})`, 'gi');
-        if (!regex.test(texto)) return;
-
-        const fragment = document.createDocumentFragment();
-        const nuevoHTML = texto.replace(regex, `<span style="color: ${config.color}; font-weight: bold;" data-resaltado="true">$1</span>`);
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = nuevoHTML;
-
-        while (tempDiv.firstChild) {
-            fragment.appendChild(tempDiv.firstChild);
-        }
-
-        node.parentNode.replaceChild(fragment, node);
-    }
-
-    function recorrerNodos(node) {
-        if (node.nodeType === 3) {
-            resaltarTexto(node);
-        } else if (node.nodeType === 1 && !['SCRIPT', 'STYLE'].includes(node.nodeName)) {
-            node.childNodes.forEach(recorrerNodos);
+    function recorrerNodos(nodo) {
+        if (nodo.nodeType === 3) {
+            aplicarReemplazos(nodo);
+        } else if (nodo.nodeType === 1 && !['SCRIPT', 'STYLE'].includes(nodo.nodeName)) {
+            nodo.childNodes.forEach(recorrerNodos);
         }
     }
 
     function observarCambios() {
-        const observer = new MutationObserver(mutations => {
-            observer.disconnect();
-            mutations.forEach(mutation => {
-                mutation.addedNodes.forEach(node => recorrerNodos(node));
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
+        const observer = new MutationObserver(muts => {
+            muts.forEach(m => m.addedNodes.forEach(recorrerNodos));
         });
         observer.observe(document.body, { childList: true, subtree: true });
     }
@@ -64,16 +49,14 @@
     recorrerNodos(document.body);
     observarCambios();
 
-    // Modal
+    // ====== MODAL UI ======
     const modal = document.createElement('div');
     Object.assign(modal.style, {
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
         backgroundColor: 'white', border: '1px solid #ccc', padding: '20px',
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', zIndex: '1001', display: 'none',
-        width: '500px', height: '400px', resize: 'both', overflow: 'hidden',
-        transition: 'opacity 0.3s ease', opacity: '0'
+        width: '500px', height: '400px', resize: 'both', overflow: 'hidden'
     });
-    modal.setAttribute('tabindex', '-1');
 
     const modalHeader = document.createElement('div');
     Object.assign(modalHeader.style, {
@@ -81,16 +64,16 @@
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: 'Arial, sans-serif', fontWeight: 'bold', fontSize: '16px'
     });
-    modalHeader.textContent = 'Mover formulario';
+    modalHeader.textContent = 'Reemplazos para ' + dominio;
     modal.appendChild(modalHeader);
 
     let isDragging = false, offsetX, offsetY;
-    modalHeader.addEventListener('mousedown', (e) => {
+    modalHeader.addEventListener('mousedown', e => {
         isDragging = true;
         offsetX = e.clientX - modal.offsetLeft;
         offsetY = e.clientY - modal.offsetTop;
     });
-    document.addEventListener('mousemove', (e) => {
+    document.addEventListener('mousemove', e => {
         if (isDragging) {
             requestAnimationFrame(() => {
                 modal.style.left = `${e.clientX - offsetX}px`;
@@ -100,119 +83,84 @@
     });
     document.addEventListener('mouseup', () => isDragging = false);
 
-    const colorInput = document.createElement('input');
-    Object.assign(colorInput.style, { width: '100%', margin: '10px 0' });
-    colorInput.type = 'color';
-    colorInput.value = config.color;
-    modal.appendChild(colorInput);
-
     const textarea = document.createElement('textarea');
-    Object.assign(textarea.style, {
-        width: '100%', height: 'calc(100% - 120px)', resize: 'none'
-    });
-    textarea.placeholder = 'Ingrese las palabras a resaltar, una por línea...';
-    textarea.value = config.palabras.join('\n');
+    Object.assign(textarea.style, { width: '100%', height: 'calc(100% - 80px)', resize: 'none' });
+    textarea.placeholder = 'palabra_original -> palabra_nueva';
     modal.appendChild(textarea);
 
-    const saveButton = document.createElement('button');
-    Object.assign(saveButton.style, {
-        position: 'absolute', bottom: '10px', left: '10px',
-        backgroundColor: '#28a745', color: 'white',
-        border: 'none', borderRadius: '5px', cursor: 'pointer', padding: '5px 10px'
+    const btnGuardar = document.createElement('button');
+    btnGuardar.textContent = 'Guardar';
+    Object.assign(btnGuardar.style, {
+        margin: '10px 5px 0 0', padding: '5px 15px', background: '#28a745', color: 'white',
+        border: 'none', borderRadius: '4px', cursor: 'pointer'
     });
-    saveButton.textContent = 'Guardar';
-    saveButton.onclick = () => {
-        config.palabras = textarea.value.split('\n').map(p => p.trim()).filter(Boolean);
-        config.color = colorInput.value;
-        localStorage.setItem('resaltarConfig', JSON.stringify(config));
-
-        document.querySelectorAll('span[data-resaltado]').forEach(span => {
-            span.replaceWith(document.createTextNode(span.textContent));
-        });
-
-        requestAnimationFrame(() => {
-            document.querySelectorAll('body *:not(script):not(style)').forEach(el => {
-                el.childNodes.forEach(resaltarTexto);
-            });
-        });
-
-        modal.style.opacity = '0';
-        setTimeout(() => modal.style.display = 'none', 300);
+    btnGuardar.onclick = () => {
+        base[dominio] = textarea.value.split('\n')
+            .map(l => l.split('->').map(x => x.trim()))
+            .filter(p => p.length === 2 && p[0] && p[1]);
+        localStorage.setItem('reemplazosPorSitio', JSON.stringify(base));
+        reemplazos = base[dominio];
+        recorrerNodos(document.body);
+        modal.style.display = 'none';
     };
-    modal.appendChild(saveButton);
 
-    const cancelButton = document.createElement('button');
-    Object.assign(cancelButton.style, {
-        position: 'absolute', bottom: '10px', right: '10px',
-        backgroundColor: '#6c757d', color: 'white',
-        border: 'none', borderRadius: '5px', cursor: 'pointer', padding: '5px 10px'
+    const btnCancelar = document.createElement('button');
+    btnCancelar.textContent = 'Cancelar';
+    Object.assign(btnCancelar.style, {
+        margin: '10px 5px 0 0', padding: '5px 15px', background: '#dc3545', color: 'white',
+        border: 'none', borderRadius: '4px', cursor: 'pointer'
     });
-    cancelButton.textContent = 'Cancelar';
-    cancelButton.onclick = () => {
-        modal.style.opacity = '0';
-        setTimeout(() => modal.style.display = 'none', 300);
-    };
-    modal.appendChild(cancelButton);
+    btnCancelar.onclick = () => modal.style.display = 'none';
 
-    const closeButton = document.createElement('button');
-    Object.assign(closeButton.style, {
-        position: 'absolute', top: '5px', right: '10px', backgroundColor: '#DC3545',
-        color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'
-    });
-    closeButton.textContent = 'X';
-    closeButton.onclick = cancelButton.onclick;
-    modal.appendChild(closeButton);
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') cancelButton.onclick();
-    });
-
+    modal.appendChild(btnGuardar);
+    modal.appendChild(btnCancelar);
     document.body.appendChild(modal);
 
-    // Menú Tampermonkey
-    GM_registerMenuCommand("🛠️ Configurar palabras resaltadas", () => {
-        textarea.value = config.palabras.join('\n');
-        colorInput.value = config.color;
+    // ====== FUNCIONES TAMpermonkey ======
+    GM_registerMenuCommand("Configurar reemplazos", () => {
+        textarea.value = base[dominio].map(p => p.join(' -> ')).join('\n');
+        modalHeader.textContent = 'Reemplazos para ' + dominio;
         modal.style.display = 'block';
-        requestAnimationFrame(() => modal.style.opacity = '1');
-        modal.focus();
+        textarea.focus();
     });
 
-    GM_registerMenuCommand("📤 Exportar configuración", () => {
-        const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'resaltar-config.json';
-        a.click();
-        URL.revokeObjectURL(url);
+    GM_registerMenuCommand("Exportar reemplazos", () => {
+        const blob = new Blob([JSON.stringify(base, null, 2)], { type: 'application/json' });
+        GM_download({
+            url: URL.createObjectURL(blob),
+            name: 'reemplazos.json',
+            saveAs: true
+        });
     });
 
-    GM_registerMenuCommand("📥 Importar configuración", () => {
+    GM_registerMenuCommand("Importar reemplazos", () => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'application/json';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
+        input.accept = '.json';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+
+        input.addEventListener('change', async () => {
+            const file = input.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (!Array.isArray(data.palabras) || typeof data.color !== 'string') {
-                        alert('Archivo no válido.');
-                        return;
-                    }
-                    config = data;
-                    localStorage.setItem('resaltarConfig', JSON.stringify(config));
-                    alert('Configuración importada correctamente.');
-                    recorrerNodos(document.body); // aplicar resaltado nuevo
-                } catch (err) {
-                    alert('Error al leer el archivo.');
+            const text = await file.text();
+            try {
+                const data = JSON.parse(text);
+                if (typeof data === 'object') {
+                    base = data;
+                    reemplazos = base[dominio] || [];
+                    localStorage.setItem('reemplazosPorSitio', JSON.stringify(base));
+                    recorrerNodos(document.body);
+                    alert('Reemplazos importados correctamente.');
+                } else {
+                    alert('El archivo no es válido.');
                 }
-            };
-            reader.readAsText(file);
-        };
+            } catch (e) {
+                alert('Error al leer el archivo.');
+            }
+            input.remove();
+        });
+
         input.click();
     });
 
