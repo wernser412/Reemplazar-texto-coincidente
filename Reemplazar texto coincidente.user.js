@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Reemplazar texto coincidente
 // @namespace    http://tampermonkey.net/
-// @version      3.0
+// @version      2025.07.29
 // @description  Reemplaza palabras por sitio con menú en Tampermonkey, exporta/importa desde archivo. Optimizado y modular.
 // @author       wernser412
 // @icon         https://raw.githubusercontent.com/wernser412/Reemplazar-texto-coincidente/refs/heads/main/icono.png
+// @downloadURL  https://github.com/wernser412/Reemplazar-texto-coincidente/raw/refs/heads/main/Reemplazar%20texto%20coincidente.user.js
 // @match        *://es.onlinemschool.com/*
 // @match        *://*.calculatorsoup.com/*
 // @grant        GM_registerMenuCommand
@@ -23,7 +24,7 @@
         if (nodo.nodeType !== 3 || !reemplazos.length) return;
         let texto = nodo.nodeValue;
         reemplazos.forEach(([original, nuevo]) => {
-            if (original && nuevo) {
+            if (original != null) {
                 const regex = new RegExp(`\\b${original}\\b`, 'gi');
                 texto = texto.replace(regex, nuevo);
             }
@@ -84,7 +85,7 @@
     document.addEventListener('mouseup', () => isDragging = false);
 
     const textarea = document.createElement('textarea');
-    Object.assign(textarea.style, { width: '100%', height: 'calc(100% - 80px)', resize: 'none' });
+    Object.assign(textarea.style, { width: '100%', height: 'calc(100% - 110px)', resize: 'none' });
     textarea.placeholder = 'palabra_original -> palabra_nueva';
     modal.appendChild(textarea);
 
@@ -94,11 +95,30 @@
         margin: '10px 5px 0 0', padding: '5px 15px', background: '#28a745', color: 'white',
         border: 'none', borderRadius: '4px', cursor: 'pointer'
     });
+
     btnGuardar.onclick = () => {
-        base[dominio] = textarea.value.split('\n')
-            .map(l => l.split('->').map(x => x.trim()))
-            .filter(p => p.length === 2 && p[0] && p[1]);
-        localStorage.setItem('reemplazosPorSitio', JSON.stringify(base));
+        const lineas = textarea.value.split('\n');
+        const reemplazosValidos = [];
+        const errores = [];
+
+        lineas.forEach((linea, i) => {
+            const partes = linea.split('->').map(x => x.trim());
+            if (partes.length === 2 && partes[0] !== '') {
+                reemplazosValidos.push(partes);
+            } else if (linea.trim() !== '') {
+                errores.push(`Línea ${i + 1}: "${linea}"`);
+            }
+        });
+
+        if (errores.length > 0) {
+            alert("Las siguientes líneas tienen formato incorrecto:\n\n" + errores.join('\n'));
+            return;
+        }
+
+        const dataActual = JSON.parse(localStorage.getItem('reemplazosPorSitio') || '{}');
+        dataActual[dominio] = reemplazosValidos;
+        localStorage.setItem('reemplazosPorSitio', JSON.stringify(dataActual));
+        base = dataActual;
         reemplazos = base[dominio];
         recorrerNodos(document.body);
         modal.style.display = 'none';
@@ -112,25 +132,47 @@
     });
     btnCancelar.onclick = () => modal.style.display = 'none';
 
+    const btnAgregarLinea = document.createElement('button');
+    btnAgregarLinea.textContent = 'Agregar línea';
+    Object.assign(btnAgregarLinea.style, {
+        margin: '10px 5px 0 0', padding: '5px 15px', background: '#007bff', color: 'white',
+        border: 'none', borderRadius: '4px', cursor: 'pointer'
+    });
+    btnAgregarLinea.onclick = () => {
+        if (textarea.value && !textarea.value.endsWith('\n')) {
+            textarea.value += '\n';
+        }
+        textarea.value += ' -> ';
+        textarea.focus();
+    };
+
     modal.appendChild(btnGuardar);
     modal.appendChild(btnCancelar);
+    modal.appendChild(btnAgregarLinea);
     document.body.appendChild(modal);
 
     // ====== FUNCIONES TAMpermonkey ======
     GM_registerMenuCommand("Configurar reemplazos", () => {
-        textarea.value = base[dominio].map(p => p.join(' -> ')).join('\n');
+        textarea.value = (base[dominio] || [])
+            .map(([a, b]) => `${a} -> ${b}`)
+            .join('\n');
         modalHeader.textContent = 'Reemplazos para ' + dominio;
         modal.style.display = 'block';
         textarea.focus();
     });
 
-    GM_registerMenuCommand("Exportar reemplazos", () => {
-        const blob = new Blob([JSON.stringify(base, null, 2)], { type: 'application/json' });
-        GM_download({
-            url: URL.createObjectURL(blob),
-            name: 'reemplazos.json',
-            saveAs: true
-        });
+    GM_registerMenuCommand("Exportar reemplazos (todos los sitios)", () => {
+        const data = localStorage.getItem('reemplazosPorSitio') || '{}';
+        try {
+            const blob = new Blob([data], { type: 'application/json' });
+            GM_download({
+                url: URL.createObjectURL(blob),
+                name: 'reemplazos_todos.json',
+                saveAs: true
+            });
+        } catch (e) {
+            alert('Error al exportar reemplazos: ' + e.message);
+        }
     });
 
     GM_registerMenuCommand("Importar reemplazos", () => {
@@ -145,18 +187,16 @@
             if (!file) return;
             const text = await file.text();
             try {
-                const data = JSON.parse(text);
-                if (typeof data === 'object') {
-                    base = data;
-                    reemplazos = base[dominio] || [];
-                    localStorage.setItem('reemplazosPorSitio', JSON.stringify(base));
-                    recorrerNodos(document.body);
-                    alert('Reemplazos importados correctamente.');
-                } else {
-                    alert('El archivo no es válido.');
-                }
+                const nuevos = JSON.parse(text);
+                const actuales = JSON.parse(localStorage.getItem('reemplazosPorSitio') || '{}');
+                const fusionados = { ...actuales, ...nuevos };
+                localStorage.setItem('reemplazosPorSitio', JSON.stringify(fusionados));
+                base = fusionados;
+                reemplazos = base[dominio] || [];
+                recorrerNodos(document.body);
+                alert('Reemplazos importados correctamente.');
             } catch (e) {
-                alert('Error al leer el archivo.');
+                alert('Error al leer el archivo: ' + e.message);
             }
             input.remove();
         });
