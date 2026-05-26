@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Reemplazar texto coincidente PRO
+// @name         Reemplazar texto coincidente
 // @namespace    http://tampermonkey.net/
 // @version      2026.05.26
 // @description  Reemplaza texto con menú flotante moderno
