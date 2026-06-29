@@ -1,17 +1,18 @@
 // ==UserScript==
-// @name         Resaltar texto coincidente
+// @name         Reemplazar texto coincidente
 // @namespace    http://tampermonkey.net/
 // @version      2026.06.28
-// @description  Resalta palabras con menú flotante moderno
+// @description  Reemplaza texto con menú flotante moderno
 // @author       wernser412
-// @icon         https://raw.githubusercontent.com/wernser412/Resaltar-texto-coincidente/refs/heads/main/ICONO.png
-// @downloadURL  https://github.com/wernser412/Resaltar-texto-coincidente/raw/refs/heads/main/Resaltar%20texto%20coincidente.user.js
-// @match        *://hentaitk.net/*
+// @icon         https://raw.githubusercontent.com/wernser412/Reemplazar-texto-coincidente/refs/heads/main/ICONO.png
+// @downloadURL  https://github.com/wernser412/Reemplazar-texto-coincidente/raw/refs/heads/main/Reemplazar%20texto%20coincidente.user.js
+// @match        *://es.onlinemschool.com/*
+// @match        *://*.calculatorsoup.com/*
 // @grant        GM_registerMenuCommand
-// @grant        GM_addStyle
 // @grant        GM_download
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_addStyle
 // @run-at       document-idle
 // ==/UserScript==
 
@@ -19,112 +20,133 @@
 
 'use strict';
 
-/* ============================ CONFIG */
+/* ============================ */
 
-const MENU_VISIBLE_KEY =
-    "rh_menu_visible";
+const dominio = location.hostname;
 
-let config =
-    JSON.parse(
-        await GM_getValue(
-            "resaltarConfig",
-            JSON.stringify({
-                palabras: [],
-                color: "#ff0000"
-            })
-        )
+const MENU_VISIBLE_KEY = "rt_menu_visible";
+
+/* ============================ DATA */
+
+async function obtenerBase() {
+
+    try {
+
+        return JSON.parse(
+            await GM_getValue(
+                "reemplazosPorSitio",
+                "{}"
+            )
+        );
+
+    } catch {
+
+        return {};
+    }
+}
+
+async function guardarBase(base) {
+
+    await GM_setValue(
+        "reemplazosPorSitio",
+        JSON.stringify(base)
     );
+}
 
-/* ============================ UTILS */
+let base =
+    await obtenerBase();
 
-function escapeRegExp(text) {
+base[dominio] =
+    base[dominio] || [];
 
-    return text.replace(
+let reemplazos =
+    base[dominio];
+
+/* ============================ REGEX */
+
+function escaparRegex(texto) {
+
+    return texto.replace(
         /[.*+?^${}()|[\]\\]/g,
         '\\$&'
     );
 }
 
-/* ============================ RESALTAR */
+/* ============================ REEMPLAZOS */
 
-function resaltarTexto(node) {
-
-    if (
-        node.nodeType !== 3 ||
-        !config.palabras.length
-    ) return;
+function aplicarReemplazos(nodo) {
 
     if (
-        node.parentNode?.closest(
-            'span[data-resaltado]'
-        )
+        nodo.nodeType !== 3 ||
+        !reemplazos.length
     ) return;
 
-    const texto =
-        node.nodeValue;
+    let texto =
+        nodo.nodeValue;
 
-    const regex = new RegExp(
-    `(?<![\\p{L}\\p{N}])(${
-        config.palabras
-            .slice()
-            .sort((a, b) => b.length - a.length)
-            .map(escapeRegExp)
-            .join('|')
-    })(?![\\p{L}\\p{N}])`,
-    'giu'
-    );
+    reemplazos.forEach(([original, nuevo]) => {
 
-    if (!regex.test(texto))
-        return;
+        if (
+            original === undefined ||
+            nuevo === undefined
+        ) return;
 
-    const fragment =
-        document.createDocumentFragment();
+        try {
 
-    const nuevoHTML =
-        texto.replace(
+            if (
+                original.startsWith(
+                    "regex:"
+                )
+            ) {
 
-            regex,
+                const patron =
+                    original.slice(6);
 
-            `<span
-                class="rh-highlight"
-                data-resaltado="true"
-            >$1</span>`
-        );
+                const regex =
+                    new RegExp(
+                        patron,
+                        'gi'
+                    );
 
-    const tempDiv =
-        document.createElement(
-            'div'
-        );
+                texto =
+                    texto.replace(
+                        regex,
+                        nuevo
+                    );
 
-    tempDiv.innerHTML =
-        nuevoHTML;
+            } else {
 
-    while (
-        tempDiv.firstChild
-    ) {
+                const regex =
+                    new RegExp(
+                        `\\b${escaparRegex(original)}\\b`,
+                        'gi'
+                    );
 
-        fragment.appendChild(
-            tempDiv.firstChild
-        );
-    }
+                texto =
+                    texto.replace(
+                        regex,
+                        nuevo
+                    );
+            }
 
-    node.parentNode.replaceChild(
-        fragment,
-        node
-    );
+        } catch {}
+    });
+
+    nodo.nodeValue =
+        texto;
 }
 
-function recorrerNodos(node) {
+function recorrerNodos(nodo) {
 
     if (
-        node.nodeType === 3
+        nodo.nodeType === 3
     ) {
 
-        resaltarTexto(node);
+        aplicarReemplazos(nodo);
 
     } else if (
 
-        node.nodeType === 1 &&
+        nodo.nodeType === 1 &&
 
         ![
             'SCRIPT',
@@ -133,32 +155,17 @@ function recorrerNodos(node) {
             'INPUT',
             'CODE',
             'PRE'
-        ].includes(node.nodeName)
+        ].includes(nodo.nodeName)
 
     ) {
-        node.childNodes.forEach(
+
+        nodo.childNodes.forEach(
             recorrerNodos
         );
     }
 }
 
-function limpiarResaltados() {
-
-    document.querySelectorAll(
-        'span[data-resaltado]'
-    ).forEach(span => {
-
-        span.replaceWith(
-            document.createTextNode(
-                span.textContent
-            )
-        );
-    });
-}
-
 function refresh() {
-
-    limpiarResaltados();
 
     recorrerNodos(
         document.body
@@ -170,13 +177,16 @@ function refresh() {
 new MutationObserver(muts => {
 
     muts.forEach(m => {
+
         m.addedNodes.forEach(
             recorrerNodos
         );
     });
 
 }).observe(document.body, {
+
     childList: true,
+
     subtree: true
 });
 
@@ -193,10 +203,13 @@ function showOverlay(text) {
 
         overlay.style.cssText = `
             position:fixed;
+
             top:50%;
             left:50%;
+
             transform:
                 translate(-50%,-50%);
+
             z-index:999999;
         `;
 
@@ -205,14 +218,23 @@ function showOverlay(text) {
 
         box.style.cssText = `
             width:420px;
+
             background:#0b1220;
+
             color:#fff;
+
             border:4px solid #4fc3ff;
+
             border-radius:20px;
+
             padding:20px;
+
             font-size:20px;
             font-weight:bold;
+
             text-align:center;
+
+            white-space:pre-line;
         `;
 
         overlay.appendChild(box);
@@ -240,27 +262,37 @@ function showOverlay(text) {
 
 async function guardar() {
 
-    config.palabras =
-
+    const nuevaLista =
         textarea.value
             .split('\n')
-            .map(x => x.trim())
-            .filter(Boolean);
 
-    config.color =
-        colorInput.value;
+            .map(l =>
+                l.split('->')
+                    .map(x =>
+                        x.trim()
+                    )
+            )
 
-    await GM_setValue(
+            .filter(p =>
+                p.length === 2 &&
+                p[0]
+            );
 
-        "resaltarConfig",
+    base =
+        await obtenerBase();
 
-        JSON.stringify(config)
+    base[dominio] =
+        nuevaLista;
+
+    await guardarBase(
+        base
     );
+
+    reemplazos =
+        base[dominio];
 
     refresh();
 
-    updateHighlightStyle();
-    
     showOverlay(
         "💾 Guardado"
     );
@@ -268,38 +300,51 @@ async function guardar() {
 
 async function exportar() {
 
-    const blob =
-        new Blob(
+    try {
 
-            [
-                JSON.stringify(
-                    config,
-                    null,
-                    2
-                )
-            ],
+        const datos =
+            await obtenerBase();
 
-            {
-                type:
-                    'application/json'
-            }
+        const pretty =
+            JSON.stringify(
+                datos,
+                null,
+                2
+            );
+
+        const blob =
+            new Blob(
+                [pretty],
+                {
+                    type:
+                        'application/json'
+                }
+            );
+
+        GM_download({
+
+            url:
+                URL.createObjectURL(
+                    blob
+                ),
+
+            name:
+                'reemplazos_global.json',
+
+            saveAs: true
+        });
+
+        showOverlay(
+            "📤 Exportado"
         );
 
-    GM_download({
-        url:
-            URL.createObjectURL(
-                blob
-            ),
+    } catch (e) {
 
-        name:
-            'resaltar-config.json',
-
-        saveAs: true
-    });
-
-    showOverlay(
-        "📤 Exportado"
-    );
+        alert(
+            'Error al exportar: ' +
+            e.message
+        );
+    }
 }
 
 function importar() {
@@ -311,8 +356,7 @@ function importar() {
 
     input.type = 'file';
 
-    input.accept =
-        '.json';
+    input.accept = '.json';
 
     input.style.display =
         'none';
@@ -321,11 +365,12 @@ function importar() {
         input
     );
 
-    input.onchange =
-        async e => {
+    input.addEventListener(
+        'change',
+        async () => {
 
             const file =
-                e.target.files[0];
+                input.files[0];
 
             if (!file)
                 return;
@@ -334,75 +379,104 @@ function importar() {
                 await file.text();
 
             try {
-                const data =
-                    JSON.parse(text);
 
-                if (
-                    !Array.isArray(
-                        data.palabras
-                    )
-                ) {
-
-                    alert(
-                        "Archivo inválido"
+                const nuevos =
+                    JSON.parse(
+                        text
                     );
 
-                    return;
-                }
+                const actuales =
+                    await obtenerBase();
 
-                config =
-                    data;
+                const fusionados = {
 
-                await GM_setValue(
-                    "resaltarConfig",
-                    JSON.stringify(config)
+                    ...actuales,
+
+                    ...nuevos
+                };
+
+                await guardarBase(
+                    fusionados
                 );
 
-                textarea.value =
-                    config.palabras.join(
-                        '\n'
-                    );
+                base =
+                    fusionados;
 
-                colorInput.value =
-                    config.color;
+                reemplazos =
+                    base[dominio] || [];
+
+                textarea.value =
+                    reemplazos
+                        .map(p =>
+                            p.join(
+                                ' -> '
+                            )
+                        )
+                        .join('\n');
 
                 refresh();
-                
-                updateHighlightStyle();
-                
+
                 showOverlay(
                     "📥 Importado"
                 );
 
-            } catch {
+            } catch (e) {
 
                 alert(
-                    "Error al importar"
+                    'Error al importar: ' +
+                    e.message
                 );
             }
 
             input.remove();
-        };
+        }
+    );
 
     input.click();
 }
 
-/* ============================ PANEL */
+function agregarFlecha() {
 
-let rhPanel;
+    const start =
+        textarea.selectionStart;
 
-let rhFab;
+    const end =
+        textarea.selectionEnd;
+
+    const texto =
+        textarea.value;
+
+    textarea.value =
+
+        texto.slice(0, start) +
+
+        ' -> ' +
+
+        texto.slice(end);
+
+    textarea.selectionStart =
+        textarea.selectionEnd =
+            start + 4;
+
+    textarea.focus();
+}
+
+/* ============================ MENU */
+
+let rtPanel;
+
+let rtFab;
 
 let textarea;
 
-let colorInput;
-
 function toggleMenu() {
 
-    rhPanel.style.display =
+    rtPanel.style.display =
 
-        rhPanel.style.display === "flex"
+        rtPanel.style.display === "flex"
+
             ? "none"
+
             : "flex";
 }
 
@@ -414,13 +488,14 @@ async function applyFloatingMenuVisibility() {
             true
         );
 
-    rhFab.style.display =
+    rtFab.style.display =
         visible
             ? "block"
             : "none";
 
     if (!visible) {
-        rhPanel.style.display =
+
+        rtPanel.style.display =
             "none";
     }
 }
@@ -441,46 +516,58 @@ async function toggleFloatingMenuVisibility() {
     applyFloatingMenuVisibility();
 }
 
+/* ============================ PANEL */
+
 async function createFloatingMenu() {
 
-    if (rhPanel)
+    if (rtPanel)
         return;
 
-    rhPanel =
-        document.createElement(
-            "div"
-        );
+    rtPanel =
+        document.createElement("div");
 
-    rhPanel.style.cssText = `
+    rtPanel.id =
+        "rt-panel";
+
+    rtPanel.style.cssText = `
         position:fixed;
+
         right:20px;
         bottom:90px;
+
         width:420px;
+
         background:#0f172a;
+
         border:2px solid #334155;
+
         border-radius:18px;
+
         padding:16px;
+
         display:none;
+
         flex-direction:column;
+
         gap:12px;
+
         z-index:999999;
+
         box-shadow:
             0 10px 30px rgba(0,0,0,.45);
     `;
 
     document.body.appendChild(
-        rhPanel
+        rtPanel
     );
 
     /* HEADER */
 
     const header =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     header.textContent =
-        "✨ Resaltador";
+        "🔤 Reemplazos";
 
     header.style.cssText = `
         color:white;
@@ -490,34 +577,8 @@ async function createFloatingMenu() {
         font-weight:bold;
     `;
 
-    rhPanel.appendChild(
+    rtPanel.appendChild(
         header
-    );
-
-    /* COLOR */
-
-    colorInput =
-        document.createElement(
-            "input"
-        );
-
-    colorInput.type =
-        "color";
-
-    colorInput.value =
-        config.color;
-
-    colorInput.style.cssText = `
-        width:100%;
-        height:50px;
-        border:none;
-        border-radius:10px;
-        cursor:pointer;
-        background:none;
-    `;
-
-    rhPanel.appendChild(
-        colorInput
     );
 
     /* TEXTAREA */
@@ -528,45 +589,57 @@ async function createFloatingMenu() {
         );
 
     textarea.placeholder =
-        "palabra1\npalabra2";
+        "hola -> adios\nregex:\\d+ -> NUMERO";
 
     textarea.value =
-        config.palabras.join(
-            '\n'
-        );
+        reemplazos
+            .map(p =>
+                p.join(' -> ')
+            )
+            .join('\n');
 
     textarea.style.cssText = `
         width:100%;
+
         height:220px;
+
         background:#111827;
+
         color:white;
+
         border:1px solid #334155;
+
         border-radius:12px;
+
         padding:12px;
+
         resize:vertical;
+
         font-size:14px;
+
         font-family:monospace;
+
         box-sizing:border-box;
     `;
 
-    rhPanel.appendChild(
+    rtPanel.appendChild(
         textarea
     );
 
     /* BOTONES */
 
     const buttonContainer =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     buttonContainer.style.cssText = `
         display:flex;
+
         flex-direction:column;
+
         gap:10px;
     `;
 
-    rhPanel.appendChild(
+    rtPanel.appendChild(
         buttonContainer
     );
 
@@ -589,13 +662,21 @@ async function createFloatingMenu() {
 
         btn.style.cssText = `
             width:100%;
+
             border:none;
+
             border-radius:12px;
+
             padding:12px;
+
             background:${color};
+
             color:white;
+
             font-size:14px;
+
             font-weight:600;
+
             cursor:pointer;
         `;
 
@@ -622,42 +703,59 @@ async function createFloatingMenu() {
         exportar
     );
 
+    createBtn(
+        "➕ Agregar ->",
+        "#ea580c",
+        agregarFlecha
+    );
+
     /* FAB */
 
-    rhFab =
+    rtFab =
         document.createElement(
             "button"
         );
 
-    rhFab.textContent =
+    rtFab.textContent =
         "☰";
 
-    rhFab.title =
+    rtFab.title =
         "Menú";
 
-    rhFab.style.cssText = `
+    rtFab.style.cssText = `
         position:fixed;
+
         right:20px;
         bottom:20px;
+
         width:60px;
         height:60px;
+
         border:none;
+
         border-radius:50%;
-        background:#ff006e;
+
+        background:#3b82f6;
+
         color:white;
+
         font-size:28px;
+
         font-weight:bold;
+
         cursor:pointer;
+
         z-index:999999;
+
         box-shadow:
             0 4px 12px rgba(0,0,0,.4);
     `;
 
-    rhFab.onclick =
+    rtFab.onclick =
         toggleMenu;
 
     document.body.appendChild(
-        rhFab
+        rtFab
     );
 
     applyFloatingMenuVisibility();
@@ -665,35 +763,11 @@ async function createFloatingMenu() {
 
 /* ============================ ESTILOS */
 
-let styleTag;
-
-function updateHighlightStyle() {
-    styleTag?.remove();
-
-    styleTag =
-        document.createElement(
-            "style"
-        );
-
-    styleTag.textContent = `
-        .rh-highlight{
-            color:${config.color} !important;
-            font-weight:bold !important;
-            text-shadow:
-                 0 0 8px ${config.color};
-            border-radius:4px;
-        }
-    `;
-
-    document.head.appendChild(
-        styleTag
-    );
-}
-
 GM_addStyle(`
-::selection{
-    background:#ff006e;
-    color:white;
+
+#rt-panel textarea::placeholder{
+
+    color:#94a3b8;
 }
 
 `);
@@ -703,8 +777,9 @@ GM_addStyle(`
 window.addEventListener(
     "load",
     async () => {
-        updateHighlightStyle();
+
         refresh();
+
         createFloatingMenu();
     }
 );
@@ -712,7 +787,9 @@ window.addEventListener(
 /* ============================ MENU */
 
 GM_registerMenuCommand(
+
     "☰ Mostrar/Ocultar botón flotante",
+
     toggleFloatingMenuVisibility
 );
 
