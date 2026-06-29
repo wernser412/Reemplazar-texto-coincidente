@@ -1,6 +1,7 @@
 # 🔁 Reemplazar texto por sitio web
 
-**Última actualización:** 26 de mayo de 2026
+**Última actualización:** 28 de junio de 2026
+
 **Compatibilidad:** [es.onlinemschool.com](https://es.onlinemschool.com/), [calculatorsoup.com](https://www.calculatorsoup.com/) y más.
 
 ![Interfaz gráfica del script](GUI.png)
