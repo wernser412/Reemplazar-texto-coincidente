@@ -4,7 +4,7 @@
 
 Reemplaza automáticamente palabras o expresiones en cualquier página compatible mediante reglas personalizadas, con un menú flotante moderno, soporte para expresiones regulares e importación/exportación de configuraciones.
 
-![GUI](https://github.com/wernser412/Reemplazar-texto-coincidente/blob/main/GUI.png?raw=true)
+![GUI](GUI.png)
 
 ## 📖 Descripción
 
