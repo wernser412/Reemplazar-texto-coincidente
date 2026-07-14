@@ -1,57 +1,119 @@
-# 🔁 Reemplazar texto por sitio web
+# Reemplazar texto coincidente
 
-**Última actualización:** 28 de junio de 2026
+**Última Actualización:** 14 de julio de 2026
 
-**Compatibilidad:** [es.onlinemschool.com](https://es.onlinemschool.com/), [calculatorsoup.com](https://www.calculatorsoup.com/) y más.
+Reemplaza automáticamente palabras o expresiones en cualquier página compatible mediante reglas personalizadas, con un menú flotante moderno, soporte para expresiones regulares e importación/exportación de configuraciones.
 
-![Interfaz gráfica del script](GUI.png)
+![GUI](https://github.com/wernser412/Reemplazar-texto-coincidente/blob/main/GUI.png?raw=true)
 
-Este es un script de [Tampermonkey](https://www.tampermonkey.net/) que permite reemplazar dinámicamente palabras o frases dentro de sitios web específicos. Cada dominio tiene su propia lista de reemplazos, editable desde una interfaz visual integrada.
+## 📖 Descripción
 
----
+**Reemplazar texto coincidente** es un UserScript para **Tampermonkey** que permite sustituir automáticamente texto en las páginas web mediante reglas definidas por el usuario.
 
-## 🎯 Características principales
+Cada sitio web mantiene su propia lista de reemplazos, permitiendo personalizar el contenido mostrado sin modificar la página original.
 
-- ✅ Reemplazo automático de texto en la página.
-- ✅ Soporte por dominio: cada sitio tiene su configuración de reemplazos independiente.
-- ✅ Interfaz visual flotante, editable y arrastrable.
-- ✅ Soporte para dejar el reemplazo en blanco (elimina la palabra original).
-- ✅ Opción rápida para agregar líneas tipo `->` con un solo clic.
-- ✅ Persistencia automática con `localStorage`.
-- ✅ Exportación e importación de reemplazos en formato `.json`.
-- ✅ Observa cambios en la página (DOM) y aplica los reemplazos en tiempo real.
+También incorpora herramientas para importar, exportar y administrar fácilmente todas las reglas desde un panel flotante.
 
 ---
 
-## 🚀 Instalación
+# 📥 Instalación
 
-1. Instala la extensión [Tampermonkey](https://www.tampermonkey.net/) en tu navegador.
-2. Abre el [panel de Tampermonkey](chrome-extension://dhdgffkkebhmkfjojejmpbldmpobfkfo/options.html).
-3. Crea un nuevo script y pega el contenido de este archivo:  
-   [`Reemplazar texto coincidente.user.js`](https://github.com/wernser412/Reemplazar-texto-coincidente/raw/refs/heads/main/Reemplazar%20texto%20coincidente.user.js)
-4. Guarda el script y asegúrate de que esté habilitado.
-5. Visita cualquiera de los sitios compatibles (como [es.onlinemschool.com](https://es.onlinemschool.com/)).
-6. Haz clic en el icono de Tampermonkey y abre la opción `Configurar reemplazos`.
+1. Instala la extensión **Tampermonkey** para tu navegador.
+
+2. Instala el script desde GitHub:
+
+**➡️ [Instalar Script](https://github.com/wernser412/Reemplazar-texto-coincidente/raw/refs/heads/main/Reemplazar%20texto%20coincidente.user.js)**
 
 ---
 
-## 🛠️ Cómo usar
+# ✨ Características
 
-1. Selecciona `Configurar reemplazos` desde el menú de Tampermonkey.
-2. En el modal que aparece, ingresa los reemplazos con el formato:
-
-   ```
-   palabra_original -> palabra_nueva
-   eliminarme ->           (esto eliminará la palabra "eliminarme")
-   círculo -> circunferencia
-   ```
-
-3. Usa el botón `Agregar línea` para insertar fácilmente nuevos reemplazos.
-4. Guarda y cierra. Los cambios se aplicarán automáticamente en la página.
+- 🔤 Reemplazo automático de texto.
+- 🌐 Reglas independientes para cada sitio web.
+- 🔍 Soporte para expresiones regulares (`regex:`).
+- ⚡ Procesamiento automático del contenido cargado dinámicamente.
+- 🎨 Panel flotante moderno.
+- 📝 Editor integrado para administrar reglas.
+- 📏 Área de edición redimensionable.
+- 💾 Guarda automáticamente las reglas por dominio.
+- 📥 Importar reglas desde archivos JSON.
+- 📤 Exportar reglas del sitio actual.
+- 📦 Exportar todas las reglas de todos los sitios.
+- ➕ Botón para insertar rápidamente `->`.
+- 📊 Contador de reglas configuradas.
+- 🔔 Mensajes visuales para confirmar las acciones.
+- ⌨️ Cierre rápido del panel con la tecla **Esc**.
 
 ---
 
-## 📤 Importar / Exportar
+# 📝 Sintaxis de las reglas
 
-- **Exportar:** Guarda todos los reemplazos de todos los dominios en un archivo `.json`.
-- **Importar:** Carga un archivo `.json` con configuraciones de reemplazos y se fusionarán con los datos existentes.
+Cada regla debe escribirse en una línea con el siguiente formato:
+
+```text
+texto original -> texto nuevo
+```
+
+Ejemplo:
+
+```text
+perro -> gato
+hola -> adiós
+```
+
+También es posible utilizar expresiones regulares:
+
+```text
+regex:\d+ -> NÚMERO
+```
+
+---
+
+# 🖥️ Uso
+
+1. Abre una página compatible.
+2. Pulsa el botón flotante ☰.
+3. Escribe las reglas de reemplazo.
+4. Guarda los cambios.
+5. El texto de la página se reemplazará automáticamente.
+
+---
+
+# 💾 Información almacenada
+
+El script recuerda automáticamente:
+
+- Reglas de reemplazo por cada dominio.
+- Altura del editor de reglas.
+- Visibilidad del botón flotante.
+
+---
+
+# 📤 Importación y exportación
+
+El panel permite:
+
+- 📥 Importar configuraciones desde un archivo JSON.
+- 📤 Exportar únicamente las reglas del sitio actual.
+- 📦 Exportar todas las reglas almacenadas en un único archivo.
+
+Esto facilita crear copias de seguridad o compartir configuraciones entre equipos.
+
+---
+
+# 📄 Sitios compatibles
+
+Actualmente el script está configurado para funcionar en:
+
+- OnlineMSchool
+- CalculatorSoup
+
+Es posible ampliar fácilmente la lista añadiendo nuevos dominios en el UserScript.
+
+---
+
+# 📄 Licencia
+
+Este proyecto se distribuye bajo la licencia **MIT**.
+
+Consulta el archivo **LICENSE** para más información.
