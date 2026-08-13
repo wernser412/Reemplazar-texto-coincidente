@@ -1,6 +1,6 @@
 # Reemplazar texto coincidente
 
-**Última Actualización:** 14 de julio de 2026
+**Última Actualización:** 12 de agosto de 2026
 
 Reemplaza automáticamente palabras o expresiones en cualquier página compatible mediante reglas personalizadas, con un menú flotante moderno, soporte para expresiones regulares e importación/exportación de configuraciones.
 
