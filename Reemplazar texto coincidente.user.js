@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Reemplazar texto coincidente
 // @namespace    http://tampermonkey.net/
-// @version      2026.07.14
-// @description  Reemplaza texto con menú flotante moderno
+// @version      2026.08.12
+// @description  Reemplaza texto con menú flotante moderno (compacto)
 // @author       wernser412
 // @icon         https://raw.githubusercontent.com/wernser412/Reemplazar-texto-coincidente/refs/heads/main/ICONO.png
 // @downloadURL  https://github.com/wernser412/Reemplazar-texto-coincidente/raw/refs/heads/main/Reemplazar%20texto%20coincidente.user.js
@@ -247,7 +247,7 @@
                 saveAs: true
             });
 
-            showOverlay('📤 Exportado (todos los sitios)');
+            showOverlay('📦 Exportado (todos los sitios)');
         } catch (e) {
             alert('Error al exportar: ' + e.message);
         }
@@ -375,18 +375,18 @@
             alturaPreviaAExpandir = getComputedStyle(textarea).height;
             textarea.style.height = '70vh';
         } else {
-            textarea.style.height = alturaPreviaAExpandir || '260px';
+            textarea.style.height = alturaPreviaAExpandir || '140px';
         }
 
-        expandirBtn.textContent = textareaExpandida ? '🗗 Reducir' : '🗖 Expandir';
+        expandirBtn.textContent = textareaExpandida ? '🗗' : '🗖';
     }
 
     function etiqueta(texto) {
         const l = document.createElement('label');
         l.textContent = texto;
         l.style.cssText = `
-            color:#8b96ad; font-size:11.5px; font-weight:700;
-            text-transform:uppercase; letter-spacing:.06em;
+            color:#8b96ad; font-size:9.5px; font-weight:700;
+            text-transform:uppercase; letter-spacing:.05em;
         `;
         return l;
     }
@@ -397,10 +397,10 @@
         btn.textContent = text;
         btn.onclick = action;
         btn.style.cssText = `
-            width:100%; border:none; border-radius:10px; padding:9px 12px;
+            width:100%; border:none; border-radius:8px; padding:6px 8px;
             background:${gradient}; color:white;
-            font:600 13px system-ui, -apple-system, sans-serif; cursor:pointer;
-            letter-spacing:.01em;
+            font:600 11px system-ui, -apple-system, sans-serif; cursor:pointer;
+            letter-spacing:.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
             transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
             box-shadow:0 2px 6px rgba(0,0,0,.3);
         `;
@@ -424,18 +424,18 @@
         rtPanel = document.createElement('div');
         rtPanel.className = 'rt-ui';
         rtPanel.style.cssText = `
-            position:fixed; right:20px; bottom:76px;
-            width:min(560px, 95vw);
-            max-height:90vh;
+            position:fixed; right:16px; bottom:64px;
+            width:min(330px, 92vw);
+            max-height:85vh;
             overflow-y:auto;
             background:linear-gradient(165deg, rgba(24,29,48,.97), rgba(10,13,24,.97));
             backdrop-filter:blur(14px);
             border:1px solid rgba(255,255,255,.08);
-            border-radius:22px;
-            padding:22px;
-            display:flex; flex-direction:column; gap:11px;
+            border-radius:14px;
+            padding:12px;
+            display:flex; flex-direction:column; gap:7px;
             z-index:999999;
-            box-shadow:0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.02) inset;
+            box-shadow:0 18px 44px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.02) inset;
             font-family:system-ui, -apple-system, sans-serif;
             opacity:0; visibility:hidden; pointer-events:none;
             transform:translateY(14px) scale(.96);
@@ -445,29 +445,32 @@
 
         /* HEADER */
         const header = document.createElement('div');
-        header.style.cssText = 'display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;';
+        header.style.cssText = 'display:flex; align-items:center; justify-content:space-between;';
 
         const tituloWrap = document.createElement('div');
-        tituloWrap.style.cssText = 'display:flex; align-items:center; gap:10px;';
+        tituloWrap.style.cssText = 'display:flex; align-items:center; gap:7px; min-width:0;';
 
         const iconoTitulo = document.createElement('div');
         iconoTitulo.textContent = '🔤';
-        iconoTitulo.style.cssText = 'font-size:20px;';
+        iconoTitulo.style.cssText = 'font-size:14px; flex-shrink:0;';
         tituloWrap.appendChild(iconoTitulo);
 
         const tituloTextos = document.createElement('div');
+        tituloTextos.style.cssText = 'min-width:0; overflow:hidden;';
 
         const titulo = document.createElement('div');
         titulo.textContent = 'Reemplazador';
         titulo.style.cssText = `
-            color:white; font-size:19px; font-weight:750; letter-spacing:-.01em;
+            color:white; font-size:13.5px; font-weight:700; letter-spacing:-.01em;
+            line-height:1.2;
         `;
         tituloTextos.appendChild(titulo);
 
         const subtitulo = document.createElement('div');
         subtitulo.textContent = dominio;
         subtitulo.style.cssText = `
-            color:#64748b; font-size:12px; font-family:monospace;
+            color:#64748b; font-size:10px; font-family:monospace;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
         `;
         tituloTextos.appendChild(subtitulo);
 
@@ -480,8 +483,8 @@
         cerrarBtn.title = 'Cerrar';
         cerrarBtn.style.cssText = `
             background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
-            color:#94a3b8; font-size:15px; width:30px; height:30px;
-            cursor:pointer; line-height:1; border-radius:9px;
+            color:#94a3b8; font-size:12px; width:22px; height:22px; flex-shrink:0;
+            cursor:pointer; line-height:1; border-radius:7px;
             display:flex; align-items:center; justify-content:center;
             transition:background .15s ease, color .15s ease, transform .15s ease;
         `;
@@ -503,15 +506,16 @@
         /* TEXTAREA */
         const filaReglasHeader = document.createElement('div');
         filaReglasHeader.style.cssText = 'display:flex; align-items:center; justify-content:space-between;';
-        filaReglasHeader.appendChild(etiqueta('Reglas (original -> nuevo, una por línea)'));
+        filaReglasHeader.appendChild(etiqueta('Reglas (original -> nuevo)'));
 
         expandirBtn = document.createElement('button');
         expandirBtn.type = 'button';
-        expandirBtn.textContent = '🗖 Expandir';
+        expandirBtn.textContent = '🗖';
+        expandirBtn.title = 'Expandir/Reducir';
         expandirBtn.style.cssText = `
-            font-size:11.5px; font-weight:600; padding:6px 11px; border-radius:8px;
+            font-size:11px; font-weight:600; padding:3px 7px; border-radius:6px;
             border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.04);
-            color:#cbd5e1; cursor:pointer; transition:background .15s ease;
+            color:#cbd5e1; cursor:pointer; transition:background .15s ease; flex-shrink:0;
         `;
         expandirBtn.onmouseenter = () => { expandirBtn.style.background = 'rgba(255,255,255,.1)'; };
         expandirBtn.onmouseleave = () => { expandirBtn.style.background = 'rgba(255,255,255,.04)'; };
@@ -525,11 +529,11 @@
         textarea.value = reemplazos.map(p => p.join(' -> ')).join('\n');
         textarea.spellcheck = false;
         textarea.style.cssText = `
-            width:100%; height:${alturaGuardada || '260px'};
+            width:100%; height:${alturaGuardada || '140px'};
             background:rgba(0,0,0,.35); color:#e5e9f0;
-            border:1px solid rgba(255,255,255,.09); border-radius:14px;
-            padding:14px; resize:vertical;
-            font-size:14.5px; line-height:1.65; font-family:'SFMono-Regular', Menlo, monospace;
+            border:1px solid rgba(255,255,255,.09); border-radius:9px;
+            padding:8px 9px; resize:vertical;
+            font-size:12.5px; line-height:1.5; font-family:'SFMono-Regular', Menlo, monospace;
             box-sizing:border-box; outline:none;
             transition:border-color .15s ease, box-shadow .15s ease;
         `;
@@ -555,27 +559,28 @@
         }).observe(textarea);
 
         contador = document.createElement('div');
-        contador.style.cssText = 'color:#64748b; font-size:12px; margin-top:-6px;';
+        contador.style.cssText = 'color:#64748b; font-size:10px; margin-top:-3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
         rtPanel.appendChild(contador);
         updateRuleCount();
 
         const nota = document.createElement('div');
-        nota.textContent = '💡 Después de cambios grandes, recarga la página para ver el resultado más limpio.';
-        nota.style.cssText = 'color:#54607a; font-size:11px; font-style:italic; margin-top:-4px;';
+        nota.textContent = '💡 Tras cambios grandes, recarga para un resultado más limpio.';
+        nota.style.cssText = 'color:#54607a; font-size:9.5px; font-style:italic; margin-top:-3px;';
         rtPanel.appendChild(nota);
 
         /* SEPARADOR */
         const separador = document.createElement('div');
-        separador.style.cssText = 'height:1px; background:rgba(255,255,255,.08); margin:2px 0;';
+        separador.style.cssText = 'height:1px; background:rgba(255,255,255,.08); margin:1px 0;';
         rtPanel.appendChild(separador);
 
         /* BOTONES */
         const buttonContainer = document.createElement('div');
-        buttonContainer.style.cssText = 'display:flex; flex-direction:column; gap:8px;';
+        buttonContainer.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
         rtPanel.appendChild(buttonContainer);
 
+        /* Fila: Guardar + Agregar flecha */
         const filaGuardarAgregar = document.createElement('div');
-        filaGuardarAgregar.style.cssText = 'display:flex; gap:8px;';
+        filaGuardarAgregar.style.cssText = 'display:flex; gap:6px;';
         buttonContainer.appendChild(filaGuardarAgregar);
 
         const wrapGuardar = document.createElement('div');
@@ -588,26 +593,15 @@
         crearBoton(wrapAgregar, '➕ ->', 'linear-gradient(135deg,#fb923c,#ea580c)', agregarFlecha);
         filaGuardarAgregar.appendChild(wrapAgregar);
 
-        const filaSecundaria = document.createElement('div');
-        filaSecundaria.style.cssText = 'display:flex; gap:8px;';
-        buttonContainer.appendChild(filaSecundaria);
+        /* Grilla 2x2: Importar / Sitio / Todo / Limpiar */
+        const grillaSecundaria = document.createElement('div');
+        grillaSecundaria.style.cssText = 'display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px;';
+        buttonContainer.appendChild(grillaSecundaria);
 
-        const wrapImport = document.createElement('div');
-        wrapImport.style.cssText = 'flex:1;';
-        crearBoton(wrapImport, '📥 Importar', 'linear-gradient(135deg,#60a5fa,#2563eb)', importar);
-        filaSecundaria.appendChild(wrapImport);
-
-        const wrapExportSitio = document.createElement('div');
-        wrapExportSitio.style.cssText = 'flex:1;';
-        crearBoton(wrapExportSitio, '📤 Exportar sitio', 'linear-gradient(135deg,#c084fc,#9333ea)', exportarSitio);
-        filaSecundaria.appendChild(wrapExportSitio);
-
-        const wrapExportTodo = document.createElement('div');
-        wrapExportTodo.style.cssText = 'flex:1;';
-        crearBoton(wrapExportTodo, '📦 Exportar todo', 'linear-gradient(135deg,#a78bfa,#6d28d9)', exportarTodo);
-        filaSecundaria.appendChild(wrapExportTodo);
-
-        crearBoton(buttonContainer, '🗑️ Limpiar lista', 'linear-gradient(135deg,#fb7185,#e11d48)', limpiarLista);
+        crearBoton(grillaSecundaria, '📥 Importar', 'linear-gradient(135deg,#60a5fa,#2563eb)', importar);
+        crearBoton(grillaSecundaria, '📤 Sitio', 'linear-gradient(135deg,#c084fc,#9333ea)', exportarSitio);
+        crearBoton(grillaSecundaria, '📦 Todo', 'linear-gradient(135deg,#a78bfa,#6d28d9)', exportarTodo);
+        crearBoton(grillaSecundaria, '🗑️ Limpiar', 'linear-gradient(135deg,#fb7185,#e11d48)', limpiarLista);
 
         /* FAB */
         rtFab = document.createElement('button');
